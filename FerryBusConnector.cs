@@ -14,17 +14,24 @@ namespace FerryBusConnector
         static string[] ferryDepartures = new string[] {"5:30PM", "6:55PM", "9:10PM", "11:20PM"};
         static int ferryDurationInMin = 40;
 
+        enum Mode
+        {
+            GET_SHORTEST_WAIT,
+            CHOOSE_FERRY,
+            DISPLAY_TABLE,
+            INVALID
+        }
         static void Main(string[] args)
         {
-            int choice = 0;
+            Mode choice = Mode.INVALID;
             do 
             {
                 Console.WriteLine("Choose mode: 1) Get shortest overall wait time 2) Get wait info for a specific sailing.");
-                choice = Convert.ToInt32(Console.ReadLine());
+                choice = (Mode)Convert.ToInt32(Console.ReadLine());
             }
-            while (choice != 1 && choice != 2);
+            while (choice != Mode.GET_SHORTEST_WAIT && choice != Mode.CHOOSE_FERRY && choice != Mode.DISPLAY_TABLE);
 
-            if (choice == 1)
+            if (choice == Mode.GET_SHORTEST_WAIT)
             {
                 string sailing = GetShortestWaitFerry();
                 Console.WriteLine(
@@ -35,7 +42,7 @@ namespace FerryBusConnector
                     DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
                     DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
             }
-            else if (choice == 2)
+            else if (choice == Mode.CHOOSE_FERRY)
             {
                 Console.Write("Choose which sailing you'll be on: ");
                 for (int i = 0; i < ferryDepartures.Length; i++)
@@ -53,6 +60,10 @@ namespace FerryBusConnector
                     DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
                     DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
                     DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
+            }
+            else if (choice == Mode.DISPLAY_TABLE)
+            {
+
             }
         }
 
@@ -96,7 +107,7 @@ namespace FerryBusConnector
             return String.Format("{0}:{1}PM", dt.Hour % 12, dt.Minute);
         }
 
-        static List<DateTime> GetSortedBuses(DateTime ferryArrival, string[] busArray)
+        static List<DateTime> GetFilteredBuses(DateTime ferryArrival, string[] busArray)
         {
             // Give 15 minutes padding in case boat is delayed.
             return busArray.
@@ -109,25 +120,26 @@ namespace FerryBusConnector
         {
             DateTime ferryArrival= GetFerryArrival(ferryDeparture, FerryBusConnector.ferryDurationInMin);
 
-            List<DateTime> sortedBusDepartures;
+            List<DateTime> filteredBusDepartures;
             if (isExpressBus)
             {
-                sortedBusDepartures = GetSortedBuses(ferryArrival, FerryBusConnector.expressBusDepartures);
+                filteredBusDepartures = GetFilteredBuses(ferryArrival, FerryBusConnector.expressBusDepartures);
             }
             else
             {
-                sortedBusDepartures = GetSortedBuses(ferryArrival, FerryBusConnector.busDepartures);
+                filteredBusDepartures = GetFilteredBuses(ferryArrival, FerryBusConnector.busDepartures);
             }
-            sortedBusDepartures.Sort();
+            filteredBusDepartures.Sort();
 
-            if (sortedBusDepartures.Count == 0)
+            if (filteredBusDepartures.Count == 0)
             {
                 // First bus the next morning
                 return DateTime.Parse(
-                    isExpressBus? FerryBusConnector.expressBusDepartures[0] : FerryBusConnector.busDepartures[0]);
+                    isExpressBus? FerryBusConnector.expressBusDepartures[0] : FerryBusConnector.busDepartures[0])
+                    .AddDays(1);
             }
 
-            return sortedBusDepartures.First();
+            return filteredBusDepartures.First();
         }
     }
 }
