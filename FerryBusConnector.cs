@@ -21,49 +21,58 @@ namespace FerryBusConnector
             DISPLAY_TABLE,
             INVALID
         }
+
         static void Main(string[] args)
         {
             Mode choice = Mode.INVALID;
             do 
             {
-                Console.WriteLine("Choose mode: 1) Get shortest overall wait time 2) Get wait info for a specific sailing.");
-                choice = (Mode)Convert.ToInt32(Console.ReadLine());
+                Console.WriteLine(
+                    "Choose mode: 1) Get shortest overall wait time. 2) Get wait info for a specific sailing. 3) Display wait graph for all available sailings.");
+                try
+                {
+                    choice = (Mode)Convert.ToInt32(Console.ReadLine());
+                }
+                catch
+                {
+                }
             }
             while (choice != Mode.GET_SHORTEST_WAIT && choice != Mode.CHOOSE_FERRY && choice != Mode.DISPLAY_TABLE);
 
-            if (choice == Mode.GET_SHORTEST_WAIT)
+            switch (choice)
             {
-                string sailing = GetShortestWaitFerry();
-                Console.WriteLine(
-                    @"The shortest wait will be on the {0} sailing from Horseshoe Bay. You'll arrive in Langdale at around {1} and 
-    can take an express bus at {2} or a normal bus at {3}.",
-                    sailing,
-                    DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
-                    DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
-                    DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
-            }
-            else if (choice == Mode.CHOOSE_FERRY)
-            {
-                Console.Write("Choose which sailing you'll be on: ");
-                for (int i = 0; i < ferryDepartures.Length; i++)
-                {
-                    Console.Write("{0}. {1} ", i+1, ferryDepartures[i]);
-                }
-                Console.WriteLine();
-                
-                int sailingNo = Convert.ToInt32(Console.ReadLine());
-                string sailing = ferryDepartures[sailingNo - 1];
-                Console.WriteLine(
-                    @"If you're on the {0} sailing from Horseshoe Bay you'll arrive in Langdale at around {1}. 
-    The next express bus you can take leaves at {2}, the next normal bus you can take leaves at {3}.",
-                    sailing,
-                    DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
-                    DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
-                    DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
-            }
-            else if (choice == Mode.DISPLAY_TABLE)
-            {
-
+                case Mode.GET_SHORTEST_WAIT:
+                    string sailing = GetShortestWaitFerry();
+                    Console.WriteLine(
+                        @"The shortest wait will be on the {0} sailing from Horseshoe Bay. You'll arrive in Langdale at around {1} and 
+                        can take an express bus at {2} or a normal bus at {3}.",
+                        sailing,
+                        DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
+                        DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
+                        DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
+                        break;
+                case Mode.CHOOSE_FERRY:
+                    Console.Write("Choose which sailing you'll be on: ");
+                    for (int i = 0; i < ferryDepartures.Length; i++)
+                    {
+                        Console.Write("{0}. {1} ", i+1, ferryDepartures[i]);
+                    }
+                    Console.WriteLine();
+                    
+                    int sailingNo = Convert.ToInt32(Console.ReadLine());
+                    sailing = ferryDepartures[sailingNo - 1];
+                    Console.WriteLine(
+                        @"If you're on the {0} sailing from Horseshoe Bay you'll arrive in Langdale at around {1}. 
+                        The next express bus you can take leaves at {2}, the next normal bus you can take leaves at {3}.",
+                        sailing,
+                        DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
+                        DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
+                        DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
+                        break;
+                case Mode.DISPLAY_TABLE:
+                    break;
+                default:
+                    throw new ArgumentException(String.Format("Invalid choice {0} passed to switch block.", choice));
             }
         }
 
