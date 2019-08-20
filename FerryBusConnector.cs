@@ -1,25 +1,32 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace FerryBusConnector
 {
     class FerryBusConnector
     {
         // Valid until Jun 20th, 2019
-        static string[] busDepartures = new string[] {"6:00AM", "5:25PM", "6:23PM", "7:40PM", "8:30PM", "9:55PM", "11:02PM"};
+        static string[] busDepartures = new string[] {"6:00 AM", "5:25 PM", "6:23 PM", "7:40 PM", "8:30 PM", "9:55 PM", "11:02 PM"};
 
-        static string[] expressBusDepartures = new string[] {"5:30AM", "5:25PM", "6:11PM", "6:50PM", "7:40PM", "8:30PM", "9:55PM"};
+        static string[] expressBusDepartures = new string[] {"5:30 AM", "5:25 PM", "6:11 PM", "6:50 PM", "7:40 PM", "8:30 PM", "9:55 PM"};
         // Valid until Jun 19th, 2019
-        static string[] ferryDepartures = new string[] {"5:30PM", "6:55PM", "9:10PM", "11:20PM"};
+        static string[] ferryDepartures = new string[] {"5:30 PM", "6:55 PM", "9:10 PM", "11:20 PM"};
         static int ferryDurationInMin = 40;
+
+        static string separator = "    ";
+
+        // tt gives AM/PM
+        static string timeFormatString = "h:mm tt";
 
         enum Mode
         {
+            INVALID,
             GET_SHORTEST_WAIT,
             CHOOSE_FERRY,
-            DISPLAY_TABLE,
-            INVALID
+            DISPLAY_TABLE
+            
         }
 
         static void Main(string[] args)
@@ -42,7 +49,8 @@ namespace FerryBusConnector
             switch (choice)
             {
                 case Mode.GET_SHORTEST_WAIT:
-                    string sailing = GetShortestWaitFerry();
+                {
+                    string sailing = GetShortestWaitFerry(FerryBusConnector.ferryDepartures);
                     Console.WriteLine(
                         @"The shortest wait will be on the {0} sailing from Horseshoe Bay. You'll arrive in Langdale at around {1} and 
                         can take an express bus at {2} or a normal bus at {3}.",
@@ -50,17 +58,32 @@ namespace FerryBusConnector
                         DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
                         DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
                         DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
-                        break;
+
+                    break;
+                }
                 case Mode.CHOOSE_FERRY:
-                    Console.Write("Choose which sailing you'll be on: ");
-                    for (int i = 0; i < ferryDepartures.Length; i++)
+                {
+                    int sailingNo = 0;
+                    do
                     {
-                        Console.Write("{0}. {1} ", i+1, ferryDepartures[i]);
-                    }
-                    Console.WriteLine();
+                        Console.Write("Choose which sailing you'll be on: ");
+                        for (int i = 0; i < ferryDepartures.Length; i++)
+                        {
+                            Console.Write("{0}. {1} ", i+1, ferryDepartures[i]);
+                        }
+                        Console.WriteLine();
+                        
+                        try
+                        {
+                            sailingNo = Convert.ToInt32(Console.ReadLine());
+                        }
+                        catch
+                        {
+                        }
+                    } 
+                    while (sailingNo < 1 || sailingNo > ferryDepartures.Length);
                     
-                    int sailingNo = Convert.ToInt32(Console.ReadLine());
-                    sailing = ferryDepartures[sailingNo - 1];
+                    string sailing = ferryDepartures[sailingNo - 1];
                     Console.WriteLine(
                         @"If you're on the {0} sailing from Horseshoe Bay you'll arrive in Langdale at around {1}. 
                         The next express bus you can take leaves at {2}, the next normal bus you can take leaves at {3}.",
@@ -69,18 +92,45 @@ namespace FerryBusConnector
                         DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
                         DateTimeToString(DetermineBus(sailing, isExpressBus: false)));
                         break;
+                }
                 case Mode.DISPLAY_TABLE:
+                {
+                    Console.WriteLine("The entries in the following table have been sorted by shortest wait time.");
+                    Console.WriteLine(String.Join(separator, new string[]{
+                        "Ferry Departure",
+                        "Ferry Arrival",
+                        "Earliest Express Bus Departure",
+                        "Earliest Normal Bus Departure",
+                        "Shortest Wait For Any Bus"}));
+
+                    List<string> ferryDeps = new List<string>(FerryBusConnector.ferryDepartures);
+
+                    for(int i=0; i<FerryBusConnector.ferryDepartures.Length; i++)
+                    {
+                        string sailing = GetShortestWaitFerry(ferryDeps.ToArray());
+                        ferryDeps.Remove(sailing);
+                        Console.WriteLine(
+                            String.Join(
+                                separator,
+                                new string[] {
+                                    sailing,
+                                    DateTimeToString(GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin)),
+                                    DateTimeToString(DetermineBus(sailing, isExpressBus: true)),
+                                    DateTimeToString(DetermineBus(sailing, isExpressBus: false))})
+                        );
+                    }  
                     break;
+                }
                 default:
                     throw new ArgumentException(String.Format("Invalid choice {0} passed to switch block.", choice));
             }
         }
 
-        static string GetShortestWaitFerry()
+        static string GetShortestWaitFerry(string[] ferryDepartures)
         {           
             string shortestWaitFerry = null;
             TimeSpan shortestWait = new TimeSpan(24,0,0);
-            foreach(string sailing in FerryBusConnector.ferryDepartures)
+            foreach(string sailing in ferryDepartures)
             {
                 DateTime ferryArrival = GetFerryArrival(sailing, FerryBusConnector.ferryDurationInMin);
 
@@ -113,7 +163,7 @@ namespace FerryBusConnector
 
         static string DateTimeToString(DateTime dt)
         {
-            return String.Format("{0}:{1}PM", dt.Hour % 12, dt.Minute);
+            return dt.ToString(timeFormatString, CultureInfo.InvariantCulture);
         }
 
         static List<DateTime> GetFilteredBuses(DateTime ferryArrival, string[] busArray)
