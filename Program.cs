@@ -24,11 +24,12 @@ class Program
         GET_SHORTEST_WAIT,
         CHOOSE_FERRY,
         DISPLAY_TABLE
-        
     }
 
     static void Main(string[] args)
     {
+        Scraper.dooStuff();
+       
         Mode choice = Mode.INVALID;
         do 
         {
